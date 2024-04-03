@@ -1,4 +1,5 @@
-﻿using DiscordBot.config;
+﻿using DiscordBot.commands;
+using DiscordBot.config;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.EventArgs;
@@ -6,7 +7,7 @@ using DSharpPlus.EventArgs;
 namespace DiscordBot {
     internal class Program {
         private static DiscordClient Client { get; set; }
-        private static CommandsNextExtension Command { get; set; }
+        private static CommandsNextExtension Commands { get; set; }
         static async Task Main(string[] args)
         {
             var jsonReader = new JsonReader();
@@ -23,6 +24,18 @@ namespace DiscordBot {
             Client = new DiscordClient(discordConfig);
 
             Client.Ready += Client_Ready;
+
+            var commandConfig = new CommandsNextConfiguration()
+            {
+                StringPrefixes = new string[] { jsonReader.Prefix },
+                EnableMentionPrefix = true,
+                EnableDms = true,
+                EnableDefaultHelp = false
+            };
+
+            Commands = Client.UseCommandsNext(commandConfig);
+            
+            Commands.RegisterCommands<TestCommands>();
 
             await Client.ConnectAsync();
             await Task.Delay(-1);
