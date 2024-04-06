@@ -1,5 +1,6 @@
 ﻿using DiscordBot.commands;
 using DiscordBot.config;
+using DiscordBot.services.dataAccess;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.EventArgs;
@@ -10,6 +11,7 @@ namespace DiscordBot {
         private static CommandsNextExtension Commands { get; set; }
         static async Task Main(string[] args)
         {
+            ShiftsystemDataAccess.CreateTableShiftsystem();
             var jsonReader = new JsonReader();
             await jsonReader.ReadJson();
 
