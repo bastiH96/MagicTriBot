@@ -2,5 +2,9 @@ namespace DiscordBot.helpers;
 
 public static class Constants
 {
-    public static string shiftCalendarFolderPath = @"/Users/sebastianheyde/Public/testFile";
+    // MAC - /Users/sebastianheyde/Public/testFile
+    // Gaming PC - 
+    // Server - C:\Data\testData
+    public static string shiftCalendarFolderPath = @"C:\Data\testData";
+    public static string fullPath = Path.Combine(shiftCalendarFolderPath, "discordBotShiftsystemDb.db");
 }
