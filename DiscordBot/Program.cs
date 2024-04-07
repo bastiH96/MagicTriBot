@@ -4,40 +4,29 @@ using DiscordBot.services.dataAccess;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
 
 namespace DiscordBot {
     internal class Program {
-        private static DiscordClient Client { get; set; }
-        private static CommandsNextExtension Commands { get; set; }
+        public static DiscordClient? Client { get; set; }
+        public static CommandsNextExtension? Commands { get; set; }
         static async Task Main(string[] args)
         {
-            ShiftsystemDataAccess.CreateTableShiftsystem();
+            CreateTablesIfNotExists();
+            
             var jsonReader = new JsonReader();
             await jsonReader.ReadJson();
 
-            var discordConfig = new DiscordConfiguration()
-            {
-                Intents = DiscordIntents.All,
-                Token = jsonReader.Token,
-                TokenType = TokenType.Bot,
-                AutoReconnect = true
-            };
-
-            Client = new DiscordClient(discordConfig);
+            Client = SetupDiscordClient(jsonReader.Token);
+            ActivateInteractivity();
 
             Client.Ready += Client_Ready;
-
-            var commandConfig = new CommandsNextConfiguration()
-            {
-                StringPrefixes = new string[] { jsonReader.Prefix },
-                EnableMentionPrefix = true,
-                EnableDms = true,
-                EnableDefaultHelp = false
-            };
-
-            Commands = Client.UseCommandsNext(commandConfig);
+            
+            Commands = SetupCommands(jsonReader.Prefix);
             
             Commands.RegisterCommands<TestCommands>();
+            Commands.RegisterCommands<ShiftsystemCommands>();
 
             await Client.ConnectAsync();
             await Task.Delay(-1);
@@ -46,6 +35,43 @@ namespace DiscordBot {
         private static Task Client_Ready(DiscordClient sender, ReadyEventArgs args)
         {
             return Task.CompletedTask;
+        }
+
+        private static void CreateTablesIfNotExists()
+        {
+            ShiftsystemDataAccess.CreateTableShiftsystem();
+        }
+
+        private static DiscordClient SetupDiscordClient(string token)
+        {
+            var discordConfig = new DiscordConfiguration()
+            {
+                Intents = DiscordIntents.All,
+                Token = token,
+                TokenType = TokenType.Bot,
+                AutoReconnect = true
+            };
+            return new DiscordClient(discordConfig);
+        }
+
+        private static CommandsNextExtension SetupCommands(string prefix)
+        {
+            var commandConfig = new CommandsNextConfiguration()
+            {
+                StringPrefixes = new string[] { prefix },
+                EnableMentionPrefix = true,
+                EnableDms = true,
+                EnableDefaultHelp = false
+            };
+            return Client!.UseCommandsNext(commandConfig);
+        }
+
+        private static void ActivateInteractivity()
+        {
+            Client.UseInteractivity(new InteractivityConfiguration()
+            {
+                Timeout = TimeSpan.FromMinutes(2)
+            });
         }
     }
 }

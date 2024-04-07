@@ -9,6 +9,8 @@ public class ShiftsystemModel
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
+
+    public string Name { get; set; }
     [Column("Shiftpattern")]
     public string ShiftpatternSerialized
     {
@@ -24,8 +26,9 @@ public class ShiftsystemModel
         
     }
 
-    public ShiftsystemModel(List<string> shiftpattern, DateTime startDate)
+    public ShiftsystemModel(string name, List<string> shiftpattern, DateTime startDate)
     {
+        this.Name = name;
         this.Shiftpattern = shiftpattern;
         this.StartDate = startDate;
     }
