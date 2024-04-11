@@ -1,5 +1,6 @@
 ﻿using DiscordBot.commands;
 using DiscordBot.config;
+using DiscordBot.models;
 using DiscordBot.services.dataAccess;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
@@ -14,6 +15,7 @@ namespace DiscordBot {
         static async Task Main(string[] args)
         {
             CreateTablesIfNotExists();
+            // DatabaseTest();
             
             var jsonReader = new JsonReader();
             await jsonReader.ReadJson();
@@ -40,6 +42,7 @@ namespace DiscordBot {
         private static void CreateTablesIfNotExists()
         {
             ShiftsystemDataAccess.CreateTableShiftsystem();
+            PersonDataAccess.CreatePersonTable();
         }
 
         private static DiscordClient SetupDiscordClient(string token)
@@ -72,6 +75,17 @@ namespace DiscordBot {
             {
                 Timeout = TimeSpan.FromMinutes(2)
             });
+        }
+
+        private static void DatabaseTest()
+        {
+            // var pattern = new List<string>() { "F12", "F12", "N12", "N12", "-", "-", "-", "-" };
+            // var shiftsystem = new ShiftsystemModel("Corna System Basti", pattern);
+            // ShiftsystemDataAccess.InsertOne(shiftsystem);
+            // Thread.Sleep(2000);
+            
+            var person = new PersonModel("Basti", "BAS", new DateTime(2023, 4, 10), 1);
+            PersonDataAccess.InsertOne(person);
         }
     }
 }

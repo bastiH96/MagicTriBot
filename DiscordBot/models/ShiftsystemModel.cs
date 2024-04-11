@@ -17,7 +17,6 @@ public class ShiftsystemModel
         get => JsonConvert.SerializeObject(Shiftpattern);
         set => Shiftpattern = JsonConvert.DeserializeObject<List<string>>(value)!;
     }
-    public DateTime StartDate { get; set; }
     [Ignore]public int IteratorIndex { get; set; } = 0;
     [Ignore] public List<string> Shiftpattern { get; set; }
 
@@ -26,10 +25,9 @@ public class ShiftsystemModel
         
     }
 
-    public ShiftsystemModel(string name, List<string> shiftpattern, DateTime startDate)
+    public ShiftsystemModel(string name, List<string> shiftpattern)
     {
         this.Name = name;
         this.Shiftpattern = shiftpattern;
-        this.StartDate = startDate;
     }
 }
