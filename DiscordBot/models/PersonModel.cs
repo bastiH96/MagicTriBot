@@ -18,6 +18,11 @@ public class PersonModel
     public DateTime LastEditedDate { get; set; }
     [ForeignKey("ShiftsystemId")]
     public int ShiftsystemId { get; set; }
+    [Ignore]
+    public ShiftsystemModel Shiftsystem { get; set; }
+    [Ignore]
+    public int ShiftpatternIterator { get; set; }
+    
 
     public PersonModel()
     {

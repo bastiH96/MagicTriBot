@@ -33,4 +33,25 @@ public static class PersonDataAccess
         connection.Close();
         return true;
     }
+
+    public static PersonModel GetOne(int id)
+    {
+        var connection = new SQLiteConnection(Constants.fullPath);
+        var result = connection.Query<PersonModel>($"SELECT * FROM Person WHERE Id = {id}").Single();
+        connection.Close();
+        result.Shiftsystem = ShiftsystemDataAccess.GetOne(result.ShiftsystemId);
+        return result;
+    }
+
+    public static List<PersonModel> GetAll()
+    {
+        var connection = new SQLiteConnection(Constants.fullPath);
+        var result = connection.Query<PersonModel>($"SELECT * FROM Person");
+        connection.Close();
+        foreach (var person in result)
+        {
+            person.Shiftsystem = ShiftsystemDataAccess.GetOne(person.ShiftsystemId);
+        }
+        return result;
+    }
 }

@@ -64,8 +64,7 @@ public class ShiftsystemCommands : BaseCommandModule
     [Command("createPerson")]
     public async Task CreatePersonCommand(CommandContext ctx)
     {
-        
-        string name, alias, lastEditedAuthor;
+        string name, alias;
         ShiftsystemModel? shiftsystem;
         var startDate = new DateTime();
         var embedMessage = new DiscordEmbedBuilder()
@@ -86,6 +85,16 @@ public class ShiftsystemCommands : BaseCommandModule
 
         await AddNewPerson(ctx, embedMessage, person, shiftsystem);
 
+    }
+
+    [Command("createTable")]
+    public async Task CreateComparisonTable(CommandContext ctx)
+    {
+        var embedMessage = new DiscordEmbedBuilder()
+        {
+            Color = DiscordColor.Green
+        };
+        return;
     }
 
     private string CreatePatternAsMessageForUser(List<string> shiftpattern)
@@ -245,5 +254,27 @@ public class ShiftsystemCommands : BaseCommandModule
             embedMessage.Description = $"Person '{person.Name}' successfully created!";
             await ctx.Channel.SendMessageAsync(embed: embedMessage);
         }
+    }
+
+    private async Task<List<PersonModel>> GetListOfPersons(CommandContext ctx, DiscordEmbedBuilder embedMessage)
+    {
+        var persons = PersonDataAccess.GetAll();
+        embedMessage.Description = @"Type in the number of the person you want to add to the table.
+                                    If you can't find the person you want, you have to create it first.
+                                    Therefore type '!createPerson' and I will guide you through it." + CreateListOfPersonsMessage(persons);
+        return null;
+    }
+    
+    private string CreateListOfPersonsMessage(List<PersonModel> persons)
+    {
+        string messageString = string.Empty;
+        int count = 1;
+        foreach (var person in persons)
+        {
+            if (messageString != string.Empty) messageString += "\n";
+            messageString += $"{count} - {person.Name}";
+            count++;
+        }
+        return messageString;
     }
 }

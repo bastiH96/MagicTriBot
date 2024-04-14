@@ -29,4 +29,12 @@ public static class ShiftsystemDataAccess
         connection.Close();
         return true;
     }
+
+    public static ShiftsystemModel GetOne(int id)
+    {
+        var connection = new SQLiteConnection(Constants.fullPath);
+        var result = connection.Query<ShiftsystemModel>($"SELECT * FROM Shiftsystem WHERE Id = {id}").Single();
+        connection.Close();
+        return result;
+    }
 }
