@@ -16,7 +16,7 @@ namespace DiscordBot {
         static async Task Main(string[] args)
         {
             CreateTablesIfNotExists();
-            DatabaseTest();
+            //DatabaseTest();
             
             var jsonReader = new JsonReader();
             await jsonReader.ReadJson();

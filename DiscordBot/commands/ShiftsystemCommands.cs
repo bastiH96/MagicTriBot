@@ -1,6 +1,8 @@
 ﻿using System.Drawing;
 using System.Text.RegularExpressions;
+using DiscordBot.helpers;
 using DiscordBot.models;
+using DiscordBot.services;
 using DiscordBot.services.dataAccess;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
@@ -94,7 +96,16 @@ public class ShiftsystemCommands : BaseCommandModule
         {
             Color = DiscordColor.Green
         };
-        return;
+        var personsForTable = await GetListOfSelectedPersons(ctx, embedMessage);
+        if (personsForTable == null) return;
+        var year = await GetYearForComparisonTable(ctx, embedMessage);
+        if (year == 0) return;
+        var fileName = $"Schichtkalender {year}";
+        fileName = personsForTable.Aggregate(fileName, (current, person) => current + $" {person?.Alias}");
+        var excelService = new ExcelCalendarService(personsForTable, fileName,
+            Constants.excelFileComparisonTablePath, year);
+        excelService.CreateComparingTableInCsvFile();
+        await SendComparisonTableAsExcelFile(ctx, fileName);
     }
 
     private string CreatePatternAsMessageForUser(List<string> shiftpattern)
@@ -256,19 +267,69 @@ public class ShiftsystemCommands : BaseCommandModule
         }
     }
 
-    private async Task<List<PersonModel>> GetListOfPersons(CommandContext ctx, DiscordEmbedBuilder embedMessage)
+    private async Task<List<PersonModel?>> GetListOfSelectedPersons(CommandContext ctx, DiscordEmbedBuilder embedMessage)
     {
         var persons = PersonDataAccess.GetAll();
+        var selectedPersons = new List<PersonModel?>();
         embedMessage.Description = @"Type in the number of the person you want to add to the table.
                                     If you can't find the person you want, you have to create it first.
-                                    Therefore type '!createPerson' and I will guide you through it." + CreateListOfPersonsMessage(persons);
-        return null;
+                                    Therefore type '!createPerson' and I will guide you through it." + "\n" + CreateListOfPersonsMessage(persons);
+        await ctx.Channel.SendMessageAsync(embed: embedMessage);
+        while (true)
+        {
+            var numberOfSelectedPersonMessage = await _interactivity.WaitForMessageAsync(message => message.Content != "");
+            try
+            {
+                var numberOfSelectedPerson = Convert.ToInt32(numberOfSelectedPersonMessage.Result.Content);
+                if (0 < numberOfSelectedPerson &&
+                    numberOfSelectedPerson <= persons.Count)
+                {
+                    embedMessage.Description =
+                        @$"You selected {persons[numberOfSelectedPerson - 1].Name}. Is that right?
+                                                Confirm with 'YES'.";
+                    await ctx.Channel.SendMessageAsync(embed: embedMessage);
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException();
+                }
+
+                var confirmationMessage = await _interactivity.WaitForMessageAsync(message => message.Content != "");
+                if (!confirmationMessage.Result.Content.Equals("yes", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    embedMessage.Description = "Creating a comparison table aborted.";
+                    await ctx.Channel.SendMessageAsync(embed: embedMessage);
+                    return null;
+                }
+
+                selectedPersons.Add(persons[numberOfSelectedPerson - 1]);
+                embedMessage.Description = @$"'{persons[numberOfSelectedPerson - 1].Name}' added to comparison list.
+                                            Do you want to add another person?
+                                            YES/NO";
+                await ctx.Channel.SendMessageAsync(embed: embedMessage);
+                confirmationMessage = await _interactivity.WaitForMessageAsync(message => message.Content != "");
+                if (confirmationMessage.Result.Content.Equals("yes", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    embedMessage.Description = "Which additional person do you want to add?";
+                    await ctx.Channel.SendMessageAsync(embed: embedMessage);
+                }
+                else
+                {
+                    return selectedPersons;
+                }
+            }
+            catch (Exception e)
+            {
+                await ctx.Channel.SendMessageAsync($"Aborted 'creating comparison table' due:\n'{e.Message}'");
+                Console.WriteLine($"Creating comparison table aborted due: {e.Message}");
+            }
+        }
     }
     
     private string CreateListOfPersonsMessage(List<PersonModel> persons)
     {
-        string messageString = string.Empty;
-        int count = 1;
+        var messageString = string.Empty;
+        var count = 1;
         foreach (var person in persons)
         {
             if (messageString != string.Empty) messageString += "\n";
@@ -276,5 +337,36 @@ public class ShiftsystemCommands : BaseCommandModule
             count++;
         }
         return messageString;
+    }
+
+    private async Task<int> GetYearForComparisonTable(CommandContext ctx, DiscordEmbedBuilder embedMessage)
+    {
+        embedMessage.Description = "Enter the year for the comparison table to be created.";
+        await ctx.Channel.SendMessageAsync(embed: embedMessage);
+
+        var yearOfTableMessage = await _interactivity.WaitForMessageAsync(message => message.Content != "");
+        try
+        {
+            var year = Convert.ToInt32(yearOfTableMessage.Result.Content);
+            if (year is >= 1900 and <= 2500)
+            {
+                return year;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Getting year from user for comparison table aborted due:\n{e.Message}");
+        }
+
+        return 0;
+    }
+
+    private async Task SendComparisonTableAsExcelFile(CommandContext ctx, string fileName)
+    {
+        await using var fs = new FileStream(Path.Combine(Constants.excelFileComparisonTablePath, $"{fileName}.xlsx"), FileMode.Open, FileAccess.Read);
+        var msg = await new DiscordMessageBuilder()
+            .WithContent("This is a test file")
+            .AddFile($"{fileName}.xlsx", fs)
+            .SendAsync(ctx.Channel);
     }
 }
